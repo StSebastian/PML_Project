@@ -1,0 +1,335 @@
+
+**Loading Data**  
+setting the directory:
+```{r setdir, cache=TRUE}
+      currentDirectory <- getwd()
+      newDirectory <- paste(currentDirectory,"/PeerAssessment1",sep="")
+      if(!file.exists("PeerAssessment1")){dir.create("PeerAssessment1")}
+      setwd(newDirectory)
+```
+
+downloading, unzipping and reading the data:
+```{r loaddata, cache=TRUE}
+      setInternet2()
+      file_train <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+      download.file(file_train,"file_train.csv")
+      train_data <- read.csv("file_train.csv") ## data for model generation
+```
+
+**Loading Packages**
+```{r packages, cache=FALSE, message=FALSE, warning=FALSE}
+      library(caret)
+      library(kernlab)
+      library(gbm)
+      library(randomForest)
+      library(RRF)
+      library(e1071)
+      library(kernlab)
+      library(nnet)
+      library(xtable)
+```
+
+**Tagging of Colmns**
+For the model generation and prediction only columns with less no more than 1000 NA entries are selected and for the PCA only columns with numeric values can be used. The selecting of those columns is performed in the next chunk.
+```{r dataclean, cache=TRUE}
+      train_data <- train_data[,-1]
+
+      train_data <- transform(train_data,"hour"=as.factor(strptime(train_data$cvtd_timestamp,
+                                                                   format="%d/%m/%Y %H:%M")$hour))
+      train_data <- transform(train_data,"year"=as.factor(as.Date(train_data$cvtd_timestamp,
+                                                                     format="%d/%m/%Y")))
+      
+      train_data <- train_data[,!grepl("time",colnames(train_data))]  
+
+      train_data <- train_data[,!grepl("window",colnames(train_data))]
+
+
+
+    ## filtering NA columns
+      na_count <- sapply(train_data,function(col){
+                      sum(is.na(col))})
+      na_count2 <- sapply(train_data,function(col){
+                      is.element("#DIV/0!",col)})
+      na_count  <- na_count > 1000
+
+    
+      ##classes <- sapply(train_data,class)
+      ##for(i in colnames(train_data)){
+      ##        if(is.integer(train_data[,i])|
+      ##           is.logical(train_data[,i])){
+      ##          train_data[,i]<- as.numeric(train_data[,i])}
+      ##        }
+    ## filtering factor columns
+      factorVar <- sapply(train_data,is.factor)
+      ##DateVar <- grepl("year",colnames(train_data))
+```
+
+**Generation of test sets**
+creating training, testing and validation set
+```{r gensets}
+      inTrain   <- createDataPartition(y=train_data$classe,p=0.6,list=F)
+      train_set <- train_data[inTrain,] ## train set
+      no_train_set <- train_data[-inTrain,]
+      inTest    <- createDataPartition(y=no_train_set$classe,p=0.5,list=F)
+      test_set  <- no_train_set[inTest,] ## test set
+      validation_set <-  no_train_set[-inTest,] ## validation set
+```
+
+
+**Principal Component Analysis**
+Generation of PC with train set and computation of PCA-values with training, testing and validation set data. PCA is only based on columns with numeric values and those with less than 1000 NA entries (see previous code chunk).
+```{r pca, cache=TRUE}
+    ## Construction 15 principal components      
+      PCAtrain <- preProcess(train_set[,!na_count2&!na_count&!factorVar],
+                                          method="pca",pcaComp=20)
+
+    ## Computation of PCA for training testing and validation data set
+    ## Since PCA is only performed based on numeric columns factor columns are attached 
+    ## to generated PC after there generation
+      PCAtrain_val <- predict(PCAtrain,train_set[,!na_count2&!na_count&!factorVar])
+      train_factor_var <- train_set[,colnames(train_set)[!na_count2&!na_count&factorVar]]
+      ##train_var <- cbind(train_factor_var[,c("user_name","classe")],PCAtrain_val)
+      train_var <- cbind(train_factor_var,PCAtrain_val)
+      ##[,c("user_name","classe")]
+      PCAtest_val <- predict(PCAtrain,test_set[,!na_count2&!na_count&!factorVar])
+      test_factor_var <- test_set[,colnames(train_set)[!na_count2&!na_count&factorVar]]
+      ##test_var <- cbind(test_factor_var[,c("user_name","classe")],PCAtest_val)      
+      test_var <- cbind(test_factor_var,PCAtest_val)   
+      
+      PCAvalidation_val <- predict(PCAtrain,validation_set[,!na_count2&!na_count&!factorVar])
+      validation_factor_var <- validation_set[,colnames(train_set)[!na_count2&!na_count&factorVar]]
+      ##validation_var <- cbind(validation_factor_var[,c("user_name","classe")],PCAvalidation_val) 
+      validation_var <- cbind(validation_factor_var,PCAvalidation_val) 
+```
+
+### Individual Model Generation and Individual Model Prediction
+In the following the six model considered are generated - gradient boosed machines, random forest, randomized random forest, naive bayes, support vector machines and neural networks - using the training set and the corresponding prediction for training, testing and validation sets are made.
+
+**Gradient Bosted Machines (gbm)**
+```{r gbm, cache=TRUE}
+    ## gbm model generation 
+      modelFit_gbm <- gbm(classe~., data=train_var, 
+                n.trees = 1000, shrinkage = 0.01, 
+                interaction.depth = 4,
+                distribution = "multinomial")
+    ## training set prediction and accuracy
+      gbm_pred_train <- predict(modelFit_gbm, train_var, n.trees=1000, type="response")
+      ## The predictions does not contain the factor values but are numeric, 
+      ## wherefore they need to be transformed with the following code 
+      gbm_train <- confusionMatrix(train_set$classe,factor(colnames(gbm_pred_train
+                                    )[max.col(data.frame(gbm_pred_train))],levels=c("A","B","C","D","E")))            
+    ## testing set prediction
+      gbm_pred_test <- predict(modelFit_gbm, test_var, n.trees=1000, type="response")
+      gbm_test <- confusionMatrix(test_set$classe,factor(colnames(gbm_pred_test
+                                    )[max.col(data.frame(gbm_pred_test))],levels=c("A","B","C","D","E")))  
+    
+    ## validation set prediction
+      gbm_pred_val <- predict(modelFit_gbm, validation_var, n.trees=1000, type="response")
+      gbm_val <- confusionMatrix(validation_set$classe,factor(colnames(gbm_pred_val
+                                    )[max.col(data.frame(gbm_pred_val))],levels=c("A","B","C","D","E")))  
+
+```
+
+**Random Forest (rf)**
+```{r rf, cache=TRUE}
+    ## rf model generation
+      modelFit_rf <- randomForest(classe~., data=train_var)
+    ## training testing and validation set predictions and accuracy
+      rf_train <- confusionMatrix(train_set$classe,predict(modelFit_rf,train_var))
+      rf_test  <- confusionMatrix(test_set$classe,predict(modelFit_rf,test_var))
+      rf_val  <- confusionMatrix(validation_set$classe,predict(modelFit_rf,validation_var))
+```
+
+**Randomized Random Forest (rrf)**
+```{r rrf, cache=TRUE}
+    ## rrf model generation
+      modelFit_rrf <- RRF(classe~., data=train_var)
+    ## training testing and validation set predictions and accuracy
+      rrf_train <- confusionMatrix(train_set$classe,predict(modelFit_rrf,train_var))
+      rrf_test  <- confusionMatrix(test_set$classe,predict(modelFit_rrf,test_var))
+      rrf_val <- confusionMatrix(validation_set$classe,predict(modelFit_rrf,validation_var))
+```
+
+**Naive Bayes (nb)**
+```{r nb, cache=TRUE}
+    ## nb model generation
+      modelFit_nb <- naiveBayes(classe~., data=train_var)
+    ## training testing and validation set predictions and accuracy
+      nb_train <- confusionMatrix(train_set$classe,predict(modelFit_nb,train_var))
+      nb_test <- confusionMatrix(test_set$classe,predict(modelFit_nb,test_var))
+      nb_val <- confusionMatrix(validation_set$classe,predict(modelFit_nb,validation_var))
+```
+
+**Support Vector Machines (svm)**
+```{r svm, cache=TRUE}
+    ## svm model generation
+      modelFit_svm <- svm(classe~., data=train_var)
+    ## training testing and validation set predictions and accuracy
+      svm_train <- confusionMatrix(train_set$classe,predict(modelFit_svm,train_var))
+      svm_test  <- confusionMatrix(test_set$classe,predict(modelFit_svm,test_var))
+      svm_val  <- confusionMatrix(validation_set$classe,predict(modelFit_svm,validation_var))
+```
+
+**Neural Networks (nnet)**
+```{r nnet, cache=TRUE, results='hide'}
+    ## nnet model generation
+      modelFit_nnet<- nnet(classe~., data=train_var,size=20)
+    ## training testing and validation set predictions and accuracy
+      ## The predictions does not contain the factor values but are numeric, 
+      ## wherefore they need to be transformed with the following code 
+      nnet_pred_train <- predict(modelFit_nnet,train_var)
+      nnet_train <- confusionMatrix(train_set$classe,factor(colnames(nnet_pred_train
+                                  )[max.col(data.frame(nnet_pred_train))],levels=c("A","B","C","D","E")))  
+      
+      nnet_pred_test  <- predict(modelFit_nnet,test_var)
+      nnet_test <- confusionMatrix(test_set$classe,factor(colnames(nnet_pred_test
+                                  )[max.col(data.frame(nnet_pred_test))],levels=c("A","B","C","D","E")))
+      
+      nnet_pred_val  <- predict(modelFit_nnet,validation_var)
+      nnet_val <- confusionMatrix(validation_set$classe,factor(colnames(nnet_pred_val
+                                  )[max.col(data.frame(nnet_pred_val))],levels=c("A","B","C","D","E"))) 
+```
+
+**Summarizing the Model's Results**
+```{r sumdata, cache=TRUE}
+    ## training set prediction accuracy
+      train_table <- rbind("rf"=rf_train$overall,"rrf"=rrf_train$overall,"nb"=nb_train$overall,
+                           "svm"=svm_train$overall,"gbm"=gbm_train$overall,"nnet"=nnet_train$overall)
+      train_table <- train_table[,1:5]
+    ## testing set prediction accuracy
+      test_table <- rbind("rf"=rf_test$overall,"rrf"=rrf_test$overall,"nb"=nb_test$overall,
+                           "svm"=svm_test$overall,"gbm"=gbm_test$overall,"nnet"=nnet_test$overall)
+      test_table <- test_table[,1:5]
+    ## testing set validation accuracy
+      val_table <- rbind("rf"=rf_val$overall,"rrf"=rrf_val$overall,"nb"=nb_val$overall,
+                         "svm"=svm_val$overall,"gbm"=gbm_val$overall,"nnet"=nnet_val$overall)
+      val_table <- val_table[,1:5]
+```
+
+### Generating the Combined Predictions
+In the following the gbm-, rf-, nb-,svm- and nnet-prediction models are used to generate the combined model (comb) which is combuted using the best performing algorithm (this is random forest (rf), see the results later).
+
+**Generating Model and Prediction test-set Values**
+```{r gencombpre,cache=TRUE}
+    ## summarizing individual model's predictions in one data frame
+      predDF_test <- data.frame("rf"=predict(modelFit_rf,test_var),"nb"=predict(modelFit_nb,test_var),
+                          "svm"=predict(modelFit_svm,test_var),
+                          "gbm"=factor(colnames(gbm_pred_test)[max.col(data.frame(gbm_pred_test))],levels=c("A","B","C","D","E")),
+                          "nnet"=factor(colnames(nnet_pred_test)[max.col(data.frame(nnet_pred_test))],levels=c("A","B","C","D","E")),
+                          "outc"=test_set$classe)
+    ## generating the model
+      combModFit <- randomForest(outc~., data=predDF_test)
+    ## predicting values
+      combPred_test <- predict(combModFit,predDF_test)
+    ## computin accuracy
+      comb_test <- confusionMatrix(test_set$classe,predict(combModFit,predDF_test))
+```
+
+**Predicting validation-set Values**
+```{r preval,cache=TRUE}
+    ## summarizing individual model's predictions in one data frame
+      predDF_val <- data.frame("rf"=predict(modelFit_rf,validation_var),"nb"=predict(modelFit_nb,validation_var),
+                          "svm"=predict(modelFit_svm,validation_var),
+                          "gbm"=factor(colnames(gbm_pred_val)[max.col(data.frame(gbm_pred_val))],levels=c("A","B","C","D","E")),
+                          "nnet"=factor(colnames(nnet_pred_val)[max.col(data.frame(nnet_pred_val))],levels=c("A","B","C","D","E")),
+                          "outc"=validation_set$classe)
+    ## predicting validation-set values and accuracy     
+      combPred_val <- predict(combModFit,predDF_val)
+      comb_val <- confusionMatrix(validation_set$classe,predict(combModFit,predDF_val))
+```
+
+**Attaching Results to the Tables**
+```{r cache=TRUE}
+      test_table <- rbind(test_table,"comb"=comb_test$overall[1:5])
+      val_table  <- rbind(val_table,"comb"=comb_val$overall[1:5])
+```
+
+```{r results = 'asis'}
+      html_attributes <- list('border="1" align="center"')
+      print(xtable(train_table,caption="Accuracy Training Data from training.csv",digits=c(6,3,3,3,3,3)),
+            type="html",html.table.attributes=html_attributes)
+      print(xtable(test_table,caption="Accuracy Testing Data from training.csv",digits=c(6,3,3,3,3,3)),
+            type="html",html.table.attributes=html_attributes)
+      print(xtable(val_table,caption="Accuracy Validation Data from training.csv",digits=c(6,3,3,3,3,3)),
+            type="html",html.table.attributes=html_attributes)
+```
+
+### Prediction for test.csv
+**Loading test.scv**
+```{r}
+      setInternet2()
+      file_test <-  "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+      download.file(file_test,"file_test.csv")
+      test_data <-  read.csv("file_test.csv") ## data for prediction
+      test_data <- test_data[,-1]
+
+      test_data <- transform(test_data,"hour"=as.factor(strptime(test_data$cvtd_timestamp,
+                                                                   format="%d/%m/%Y %H:%M")$hour))
+      test_data <- transform(test_data,"year"=as.factor(as.Date(test_data$cvtd_timestamp,
+                                                                     format="%d/%m/%Y")))
+      
+      test_data <- test_data[,!grepl("time",colnames(test_data))]  
+
+      test_data <- test_data[,!grepl("window",colnames(test_data))]
+```
+
+**Computing PCs**
+```{r}
+      PCAtest_data_val <- predict(PCAtrain,test_data[,!na_count2&!na_count&!factorVar])
+      test_data_factor_var <- test_data[,colnames(test_data)[!na_count2&!na_count&factorVar]]
+      ##test_data_var <- cbind(test_data_factor_var[,c("user_name","problem_id")],PCAtest_data_val)
+      test_data_var <- cbind(test_data_factor_var,PCAtest_data_val)
+      colnames(test_data_var)[1] <- "user_name"
+```
+
+**Adjusting Factor values in test_data**  
+In order to generate prediction the factor types need to have the same attributes (factor levels) as in the train_data sets (training, testing, validation). Otherwise the *predict()* function will not work for the models.
+```{r}
+      test_data_var[,2]<- factor("E",levels=c("A","B","C","D","E"))
+      colnames(test_data_var)[2]<-"classe"
+      
+      levels(test_data_var[,4]) <- c(levels(test_data_var[,4]),levels(validation_var[,4])[!is.element(
+                                              levels(validation_var[,4]),levels(test_data_var[,4]))])
+      levels(test_data_var[,3]) <- c(levels(test_data_var[,3]),levels(validation_var[,3])[!is.element(
+                                              levels(validation_var[,3]),levels(test_data_var[,3]))])
+      levels(test_data_var[,2]) <- c(levels(test_data_var[,2]),levels(validation_var[,2])[!is.element(
+                                              levels(validation_var[,2]),levels(test_data_var[,2]))])
+      levels(test_data_var[,1]) <- c(levels(test_data_var[,1]),levels(validation_var[,1])[!is.element(
+                                              levels(validation_var[,1]),levels(test_data_var[,1]))])
+```
+
+**Predictions for Individual Models**
+```{r}
+      rf_test_data  <- predict(modelFit_rf,test_data_var)
+      rrf_test_data <- predict(modelFit_rrf,test_data_var)
+      nb_test_data <- predict(modelFit_nb,test_data_var)
+      svm_test_data  <- predict(modelFit_svm,test_data_var)
+      gbm_pred_test_data <- predict(modelFit_gbm, test_data_var, n.trees=1000, type="response")
+      gbm_pred_test_data <- factor(colnames(gbm_pred_test_data)[max.col(data.frame(
+                              gbm_pred_test_data))],levels=c("A","B","C","D","E"))
+      nnet_pred_test_data  <- predict(modelFit_nnet,test_data_var)
+      nnet_pred_test_data <- factor(colnames(nnet_pred_test_data)[max.col(data.frame(
+                              nnet_pred_test_data))],levels=c("A","B","C","D","E"))
+```
+
+**Prediction for Combined Model**
+```{r}
+      predDF_test_data <- data.frame("rf"=predict(modelFit_rf,test_data_var),"nb"=predict(modelFit_nb,test_data_var),
+                          "svm"=predict(modelFit_svm,test_data_var),
+                          "gbm"=gbm_pred_test_data,
+                          "nnet"=nnet_pred_test_data,
+                          "outc"=test_data_var$classe)
+      combPred_test_data <- predict(combModFit,predDF_test_data)
+```
+
+**Summarizing the Predictions and Plotting**
+```{r results = 'asis'}
+      test_data_table <- data.frame(cbind("rf"=as.character(rf_test_data),"rrf"=as.character(rrf_test_data),
+                                          "nb"=as.character(nb_test_data),"svm"=as.character(svm_test_data),
+                                          "gbm"=as.character(gbm_pred_test_data), "nnet"=as.character(nnet_pred_test_data),
+                                          "comb"=as.character(combPred_test_data)))
+      rownames(test_data_table) <- paste("id",1:nrow(test_data_table),sep="_")
+      html_attributes <- list('border="1" align="center"')
+      print(xtable(t(test_data_table),caption="Predictions for test.csv"),
+            type="html",html.table.attributes=html_attributes)
+```
