@@ -61,7 +61,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 </div>
 <div id="methodology" class="section level3">
 <h3>Methodology</h3>
-<p><strong>Datasets and Cross Validation</strong> For the model generation and the conduction of cross validation and out-of-sample error estimation, the <strong>pml_training.csv</strong> set is divided into three subsets: <strong>train_set, test_set and validation_set</strong>. These shall <strong>not</strong> be confused with the <strong>pml_training.csv</strong> or the <strong>pml_testing.csv</strong>, since those are just subsets of the <strong>pml_training.csv</strong>. The <strong>train_set</strong> is used to compute the individual models and the <strong>test_set</strong> and <strong>validation_set</strong> to predict their accuracy and out-of-sample error. In Addition the <strong>test_set</strong> is also used to build a model which combines the results of all the individual models. Cross validation with this combined model can only be performed with the <strong>validation_set</strong>, since cross validation cannot be done using a data set with which the original model was actually built.</p>
+<p><strong>Datasets and Cross Validation</strong><br />For the model generation and the conduction of cross validation and out-of-sample error estimation, the <strong>pml_training.csv</strong> set is divided into three subsets: <strong>train_set, test_set and validation_set</strong>. These shall <strong>not</strong> be confused with the <strong>pml_training.csv</strong> or the <strong>pml_testing.csv</strong>, since those are just subsets of the <strong>pml_training.csv</strong>. The <strong>train_set</strong> is used to compute the individual models and the <strong>test_set</strong> and <strong>validation_set</strong> to predict their accuracy and out-of-sample error. In Addition the <strong>test_set</strong> is also used to build a model which combines the results of all the individual models. Cross validation with this combined model can only be performed with the <strong>validation_set</strong>, since cross validation cannot be done using a data set with which the original model was actually built.</p>
 <p><strong>Individual Models</strong><br />Six individual prediction models are tested, which are the most powerful I know:</p>
 <ol style="list-style-type: decimal">
 <li>Gradient Boosting Machines (gbm)</li>
@@ -71,7 +71,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <li>Support Vector Machines (svm)</li>
 <li>Neural Networks (nnet)</li>
 </ol>
-<p><strong>Principal Component Analysis</strong> The <strong>pml_training.csv</strong> and the <strong>pml_testing.csv</strong> consist of more than 150 variables. Even when the sets are cleaned for those variables with a lot NA and other not usable entries, there are more than 50 variables left. In order to reduce this number a Principal Component Analysis is applied to compress the numeric variables to <strong>20 Principal Components</strong>.</p>
+<p><strong>Principal Component Analysis</strong><br />The <strong>pml_training.csv</strong> and the <strong>pml_testing.csv</strong> consist of more than 150 variables. Even when the sets are cleaned for those variables with a lot NA and other not usable entries, there are more than 50 variables left. In order to reduce this number a Principal Component Analysis is applied to compress the numeric variables to <strong>20 Principal Components</strong>.</p>
 </div>
 <div id="loading-data-and-packages" class="section level3">
 <h3>Loading Data and Packages</h3>
@@ -98,8 +98,16 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 </div>
 <div id="preprocessing-test-set-generation-and-pca" class="section level3">
 <h3>Preprocessing, Test-Set Generation and PCA</h3>
-<p><strong>Preprocessing Data and Tagging of Colmns</strong> Preprocessing steps <em>transformation of time column into interpretable format (factor variables for date and daytime) </em>deletion of the “window” and “time” columns</p>
-<p>Tagging steps <em>Tagging of columns with more than 1000 NA entries or an “#DIV/0!” entry (those won’t be considered in regressions) </em>Tagging of factor columns since they cannot be processed by the PCA and have to be isolated and later attached again to the PCA-generated values</p>
+<p><strong>Preprocessing Data and Tagging of Colmns</strong><br />Preprocessing steps</p>
+<ul>
+<li>transformation of time column into interpretable format (factor variables for date and daytime)</li>
+<li>deletion of the “window” and “time” columns</li>
+</ul>
+<p>Tagging steps</p>
+<ul>
+<li>Tagging of columns with more than 1000 NA entries or an “#DIV/0!” entry (those won’t be considered in regressions)</li>
+<li>Tagging of factor columns since they cannot be processed by the PCA and have to be isolated and later attached again to the PCA-generated values</li>
+</ul>
 <pre class="r"><code>    ##Preprocessing Data
       ## Transforming time column
       pml_training.csv &lt;- transform(pml_training.csv,&quot;hour&quot;=as.factor(strptime(pml_training.csv$cvtd_timestamp,
@@ -124,14 +132,14 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 
       ## Factor columns
       factorVar &lt;- sapply(pml_training.csv,is.factor)</code></pre>
-<p><strong>Generation of Test-Sets</strong> creating training, testing and validation set</p>
+<p><strong>Generation of Test-Sets</strong><br />creating training, testing and validation set</p>
 <pre class="r"><code>      inTrain   &lt;- createDataPartition(y=pml_training.csv$classe,p=0.6,list=F)
       train_set &lt;- pml_training.csv[inTrain,] ## train-set
       no_train_set &lt;- pml_training.csv[-inTrain,]
       inTest    &lt;- createDataPartition(y=no_train_set$classe,p=0.5,list=F)
       test_set  &lt;- no_train_set[inTest,] ## test-set
       validation_set &lt;-  no_train_set[-inTest,] ## validation set</code></pre>
-<p><strong>Principal Component Analysis</strong> Generation of PC with train-set and computation of PCA-values with training, testing and validation set data. PCA is only based on columns with numeric values and those with less than 1000 NA entries (see previous code chunk).</p>
+<p><strong>Principal Component Analysis</strong><br />Generation of PC with train-set and computation of PCA-values with training, testing and validation set data. PCA is only based on columns with numeric values and those with less than 1000 NA entries (see previous code chunk).</p>
 <pre class="r"><code>    ## Construction 20 principal components      
       PCAtrain &lt;- preProcess(train_set[,!na_count2&amp;!na_count&amp;!factorVar],
                                           method=&quot;pca&quot;,pcaComp=20)
@@ -266,12 +274,12 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 </div>
 <div id="cross-validation-out-of-sample-error" class="section level3">
 <h3>Cross Validation / Out-of-Sample Error</h3>
-<p><strong>Accuracy of Training, Testing and Validation set Predictions</strong> Cross validation is performed when a model built with a data set A is tested on an of A independent data set B. Therefore the testing set accuracy represents results of <strong>cross validation</strong> for the individual models only <strong>(not their combination)</strong>. The validation set accuracy represents results of <strong>cross validation</strong> for the individual <strong>and</strong> the combined model. Likewise is the expected <strong>out-of-sample error</strong> one minus the accuracy generated by the <strong>cross validation</strong>.</p>
+<p><strong>Accuracy of Training, Testing and Validation set Predictions</strong><br />Cross validation is performed when a model built with a data set A is tested on an of A independent data set B. Therefore the testing set accuracy represents results of <strong>cross validation</strong> for the individual models only <strong>(not their combination)</strong>. The validation set accuracy represents results of <strong>cross validation</strong> for the individual <strong>and</strong> the combined model. Likewise is the expected <strong>out-of-sample error</strong> one minus the accuracy generated by the <strong>cross validation</strong>.</p>
 <pre class="r"><code>      html_attributes &lt;- list('border=&quot;1&quot; align=&quot;center&quot;')
       print(xtable(train_table,caption=&quot;Accuracy Training Data from training.csv&quot;,digits=c(6,3,3,3,3,3)),
             type=&quot;html&quot;,html.table.attributes=html_attributes)</code></pre>
 <!-- html table generated in R 3.0.2 by xtable 1.7-4 package -->
-<!-- Sun Dec 07 19:51:14 2014 -->
+<!-- Sun Dec 07 20:37:37 2014 -->
 <table border="1" align="center">
 <caption align="bottom"> 
 Accuracy Training Data from training.csv
@@ -316,64 +324,176 @@ rrf
   <tr> <td align="right"> 
 nb
 </td> <td align="right"> 
-0.507
+0.506
 </td> <td align="right"> 
-0.377
+0.375
 </td> <td align="right"> 
-0.498
+0.497
 </td> <td align="right"> 
-0.516
+0.515
 </td> <td align="right"> 
-0.269
+0.284
 </td> </tr>
   <tr> <td align="right"> 
 svm
 </td> <td align="right"> 
-0.904
+0.905
 </td> <td align="right"> 
-0.878
+0.880
 </td> <td align="right"> 
-0.898
+0.900
 </td> <td align="right"> 
-0.909
+0.911
 </td> <td align="right"> 
-0.302
+0.301
 </td> </tr>
   <tr> <td align="right"> 
 gbm
 </td> <td align="right"> 
 0.852
 </td> <td align="right"> 
-0.812
+0.813
 </td> <td align="right"> 
-0.845
+0.846
 </td> <td align="right"> 
-0.858
+0.859
 </td> <td align="right"> 
-0.300
+0.302
 </td> </tr>
   <tr> <td align="right"> 
 nnet
 </td> <td align="right"> 
-0.828
+0.817
 </td> <td align="right"> 
-0.783
+0.768
 </td> <td align="right"> 
-0.821
+0.809
 </td> <td align="right"> 
-0.835
+0.824
 </td> <td align="right"> 
-0.292
+0.297
 </td> </tr>
    </table>
 
 <pre class="r"><code>      print(xtable(test_table,caption=&quot;Accuracy Testing Data from training.csv&quot;,digits=c(6,3,3,3,3,3)),
             type=&quot;html&quot;,html.table.attributes=html_attributes)</code></pre>
 <!-- html table generated in R 3.0.2 by xtable 1.7-4 package -->
-<!-- Sun Dec 07 19:51:14 2014 -->
+<!-- Sun Dec 07 20:37:37 2014 -->
 <table border="1" align="center">
 <caption align="bottom"> 
 Accuracy Testing Data from training.csv
+</caption>
+<tr> <th>  </th> <th> 
+Accuracy
+</th> <th> 
+Kappa
+</th> <th> 
+AccuracyLower
+</th> <th> 
+AccuracyUpper
+</th> <th> 
+AccuracyNull
+</th>  </tr>
+  <tr> <td align="right"> 
+rf
+</td> <td align="right"> 
+0.970
+</td> <td align="right"> 
+0.962
+</td> <td align="right"> 
+0.964
+</td> <td align="right"> 
+0.975
+</td> <td align="right"> 
+0.286
+</td> </tr>
+  <tr> <td align="right"> 
+rrf
+</td> <td align="right"> 
+0.962
+</td> <td align="right"> 
+0.952
+</td> <td align="right"> 
+0.956
+</td> <td align="right"> 
+0.968
+</td> <td align="right"> 
+0.287
+</td> </tr>
+  <tr> <td align="right"> 
+nb
+</td> <td align="right"> 
+0.497
+</td> <td align="right"> 
+0.364
+</td> <td align="right"> 
+0.481
+</td> <td align="right"> 
+0.512
+</td> <td align="right"> 
+0.281
+</td> </tr>
+  <tr> <td align="right"> 
+svm
+</td> <td align="right"> 
+0.889
+</td> <td align="right"> 
+0.859
+</td> <td align="right"> 
+0.879
+</td> <td align="right"> 
+0.899
+</td> <td align="right"> 
+0.305
+</td> </tr>
+  <tr> <td align="right"> 
+gbm
+</td> <td align="right"> 
+0.813
+</td> <td align="right"> 
+0.762
+</td> <td align="right"> 
+0.800
+</td> <td align="right"> 
+0.825
+</td> <td align="right"> 
+0.306
+</td> </tr>
+  <tr> <td align="right"> 
+nnet
+</td> <td align="right"> 
+0.784
+</td> <td align="right"> 
+0.726
+</td> <td align="right"> 
+0.770
+</td> <td align="right"> 
+0.796
+</td> <td align="right"> 
+0.294
+</td> </tr>
+  <tr> <td align="right"> 
+comb
+</td> <td align="right"> 
+0.975
+</td> <td align="right"> 
+0.968
+</td> <td align="right"> 
+0.969
+</td> <td align="right"> 
+0.979
+</td> <td align="right"> 
+0.287
+</td> </tr>
+   </table>
+
+<pre class="r"><code>      print(xtable(val_table,caption=&quot;Accuracy Validation Data from training.csv&quot;,digits=c(6,3,3,3,3,3)),
+            type=&quot;html&quot;,html.table.attributes=html_attributes)</code></pre>
+<!-- html table generated in R 3.0.2 by xtable 1.7-4 package -->
+<!-- Sun Dec 07 20:37:37 2014 -->
+<table border="1" align="center">
+<caption align="bottom"> 
+Accuracy Validation Data from training.csv
 </caption>
 <tr> <th>  </th> <th> 
 Accuracy
@@ -393,201 +513,89 @@ rf
 </td> <td align="right"> 
 0.961
 </td> <td align="right"> 
-0.964
-</td> <td align="right"> 
-0.975
-</td> <td align="right"> 
-0.283
-</td> </tr>
-  <tr> <td align="right"> 
-rrf
-</td> <td align="right"> 
-0.959
-</td> <td align="right"> 
-0.948
-</td> <td align="right"> 
-0.952
-</td> <td align="right"> 
-0.965
-</td> <td align="right"> 
-0.283
-</td> </tr>
-  <tr> <td align="right"> 
-nb
-</td> <td align="right"> 
-0.498
-</td> <td align="right"> 
-0.366
-</td> <td align="right"> 
-0.483
-</td> <td align="right"> 
-0.514
-</td> <td align="right"> 
-0.282
-</td> </tr>
-  <tr> <td align="right"> 
-svm
-</td> <td align="right"> 
-0.892
-</td> <td align="right"> 
-0.863
-</td> <td align="right"> 
-0.882
-</td> <td align="right"> 
-0.901
-</td> <td align="right"> 
-0.302
-</td> </tr>
-  <tr> <td align="right"> 
-gbm
-</td> <td align="right"> 
-0.808
-</td> <td align="right"> 
-0.757
-</td> <td align="right"> 
-0.795
-</td> <td align="right"> 
-0.820
-</td> <td align="right"> 
-0.304
-</td> </tr>
-  <tr> <td align="right"> 
-nnet
-</td> <td align="right"> 
-0.803
-</td> <td align="right"> 
-0.751
-</td> <td align="right"> 
-0.790
-</td> <td align="right"> 
-0.816
-</td> <td align="right"> 
-0.295
-</td> </tr>
-  <tr> <td align="right"> 
-comb
-</td> <td align="right"> 
-0.976
-</td> <td align="right"> 
-0.969
-</td> <td align="right"> 
-0.970
-</td> <td align="right"> 
-0.980
-</td> <td align="right"> 
-0.284
-</td> </tr>
-   </table>
-
-<pre class="r"><code>      print(xtable(val_table,caption=&quot;Accuracy Validation Data from training.csv&quot;,digits=c(6,3,3,3,3,3)),
-            type=&quot;html&quot;,html.table.attributes=html_attributes)</code></pre>
-<!-- html table generated in R 3.0.2 by xtable 1.7-4 package -->
-<!-- Sun Dec 07 19:51:14 2014 -->
-<table border="1" align="center">
-<caption align="bottom"> 
-Accuracy Validation Data from training.csv
-</caption>
-<tr> <th>  </th> <th> 
-Accuracy
-</th> <th> 
-Kappa
-</th> <th> 
-AccuracyLower
-</th> <th> 
-AccuracyUpper
-</th> <th> 
-AccuracyNull
-</th>  </tr>
-  <tr> <td align="right"> 
-rf
-</td> <td align="right"> 
-0.972
-</td> <td align="right"> 
-0.965
-</td> <td align="right"> 
-0.967
-</td> <td align="right"> 
-0.977
-</td> <td align="right"> 
-0.282
-</td> </tr>
-  <tr> <td align="right"> 
-rrf
-</td> <td align="right"> 
-0.957
-</td> <td align="right"> 
-0.946
-</td> <td align="right"> 
-0.950
-</td> <td align="right"> 
 0.963
 </td> <td align="right"> 
-0.281
+0.974
+</td> <td align="right"> 
+0.286
+</td> </tr>
+  <tr> <td align="right"> 
+rrf
+</td> <td align="right"> 
+0.960
+</td> <td align="right"> 
+0.949
+</td> <td align="right"> 
+0.953
+</td> <td align="right"> 
+0.966
+</td> <td align="right"> 
+0.285
 </td> </tr>
   <tr> <td align="right"> 
 nb
 </td> <td align="right"> 
-0.499
+0.496
 </td> <td align="right"> 
-0.366
+0.364
 </td> <td align="right"> 
-0.483
+0.480
 </td> <td align="right"> 
-0.514
+0.512
 </td> <td align="right"> 
-0.276
+0.270
 </td> </tr>
   <tr> <td align="right"> 
 svm
 </td> <td align="right"> 
-0.882
+0.887
 </td> <td align="right"> 
-0.851
+0.857
 </td> <td align="right"> 
-0.872
+0.877
 </td> <td align="right"> 
-0.892
+0.897
 </td> <td align="right"> 
-0.298
+0.296
 </td> </tr>
   <tr> <td align="right"> 
 gbm
 </td> <td align="right"> 
 0.797
 </td> <td align="right"> 
-0.743
-</td> <td align="right"> 
-0.784
-</td> <td align="right"> 
-0.810
-</td> <td align="right"> 
-0.300
-</td> </tr>
-  <tr> <td align="right"> 
-nnet
-</td> <td align="right"> 
-0.797
-</td> <td align="right"> 
-0.743
+0.742
 </td> <td align="right"> 
 0.784
 </td> <td align="right"> 
 0.809
 </td> <td align="right"> 
-0.285
+0.303
+</td> </tr>
+  <tr> <td align="right"> 
+nnet
+</td> <td align="right"> 
+0.786
+</td> <td align="right"> 
+0.729
+</td> <td align="right"> 
+0.773
+</td> <td align="right"> 
+0.799
+</td> <td align="right"> 
+0.291
 </td> </tr>
   <tr> <td align="right"> 
 comb
 </td> <td align="right"> 
-0.972
+0.969
 </td> <td align="right"> 
-0.964
+0.961
 </td> <td align="right"> 
-0.966
+0.963
 </td> <td align="right"> 
-0.977
+0.974
 </td> <td align="right"> 
-0.283
+0.287
 </td> </tr>
    </table>
 <p>The random forest models and the combined model report the <strong>lowest out-of-sample error</strong> and therefore seem to be the best performing prediction models.</p>
@@ -595,12 +603,12 @@ comb
 <div id="prediction-for-pml_testing.csv" class="section level3">
 <h3>Prediction for pml_testing.csv</h3>
 <p>In the following all the models are used to predict the 20-values (correctness of barbell lifts) of the not yet uploaded <strong>pml_testing.csv</strong> set. However, since the random forest models and the combined model performed best, their predictions represent the leading ones.</p>
-<p><strong>Loading test.scv</strong></p>
+<p><strong>Loading test.csv</strong></p>
 <pre class="r"><code>      setInternet2()
       file_test &lt;-  &quot;https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv&quot;
       download.file(file_test,&quot;file_test.csv&quot;)
       pml_testing.csv &lt;-  read.csv(&quot;file_test.csv&quot;) ## data for prediction</code></pre>
-<p><strong>Preprocessing Data (columns already tagged)</strong> Check preprocessing for train.csv set for the purpose of steps.</p>
+<p><strong>Preprocessing Data (columns already tagged)</strong><br />Check preprocessing for train.csv set for the purpose of steps.</p>
 <pre class="r"><code>    ##Preprocessing Data
       ## Transforming time column
       pml_testing.csv &lt;- transform(pml_testing.csv,&quot;hour&quot;=as.factor(strptime(pml_testing.csv$cvtd_timestamp,
@@ -657,7 +665,7 @@ comb
       print(xtable(t(test_data_table),caption=&quot;Predictions for pml_testing.csv&quot;),
             type=&quot;html&quot;,html.table.attributes=html_attributes)</code></pre>
 <!-- html table generated in R 3.0.2 by xtable 1.7-4 package -->
-<!-- Sun Dec 07 19:51:16 2014 -->
+<!-- Sun Dec 07 20:37:41 2014 -->
 <table border="1" align="center">
 <caption align="bottom"> 
 Predictions for pml_testing.csv
@@ -716,7 +724,7 @@ A
 </td> <td> 
 A
 </td> <td> 
-B
+E
 </td> <td> 
 D
 </td> <td> 
@@ -759,7 +767,7 @@ A
 </td> <td> 
 A
 </td> <td> 
-B
+E
 </td> <td> 
 D
 </td> <td> 
@@ -792,7 +800,7 @@ B
   <tr> <td align="right"> 
 nb
 </td> <td> 
-B
+A
 </td> <td> 
 A
 </td> <td> 
@@ -812,11 +820,11 @@ A
 </td> <td> 
 A
 </td> <td> 
-A
-</td> <td> 
-A
-</td> <td> 
 B
+</td> <td> 
+A
+</td> <td> 
+E
 </td> <td> 
 A
 </td> <td> 
@@ -828,14 +836,14 @@ A
 </td> <td> 
 E
 </td> <td> 
-B
+E
 </td> <td> 
 B
 </td> </tr>
   <tr> <td align="right"> 
 svm
 </td> <td> 
-B
+A
 </td> <td> 
 A
 </td> <td> 
@@ -878,7 +886,7 @@ B
   <tr> <td align="right"> 
 gbm
 </td> <td> 
-B
+A
 </td> <td> 
 A
 </td> <td> 
@@ -898,7 +906,7 @@ A
 </td> <td> 
 A
 </td> <td> 
-B
+A
 </td> <td> 
 C
 </td> <td> 
@@ -906,7 +914,7 @@ B
 </td> <td> 
 A
 </td> <td> 
-E
+D
 </td> <td> 
 E
 </td> <td> 
@@ -921,27 +929,27 @@ B
   <tr> <td align="right"> 
 nnet
 </td> <td> 
-A
+C
 </td> <td> 
 A
 </td> <td> 
 C
+</td> <td> 
+C
+</td> <td> 
+A
+</td> <td> 
+B
+</td> <td> 
+C
+</td> <td> 
+B
 </td> <td> 
 A
 </td> <td> 
 A
 </td> <td> 
 E
-</td> <td> 
-D
-</td> <td> 
-B
-</td> <td> 
-A
-</td> <td> 
-A
-</td> <td> 
-B
 </td> <td> 
 C
 </td> <td> 
@@ -974,7 +982,7 @@ A
 </td> <td> 
 A
 </td> <td> 
-B
+E
 </td> <td> 
 D
 </td> <td> 
