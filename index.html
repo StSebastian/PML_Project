@@ -57,12 +57,20 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <p>| <strong>Course</strong>: | <a href="https://class.coursera.org/predmachlearn-016/">Practical Machine Learning</a> | |————–|——————————————————————| | <strong>Student</strong>: | MaxMustermann | | <strong>Date</strong>: | 12/07/2014 | ========================================================</p>
 <div id="executive-summary" class="section level3">
 <h3>Executive Summary</h3>
-<p>In this work I build and test different prediction models which all are meant to estimate the correctness of barbell lifts, based on a set of variables. The data used for this project were compiled by <a href="http://groupware.les.inf.puc-rio.br/har">Groupware.LES</a> and cover two different datasets. The first one consist of over 19000 observations, can be downloaded from <a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv">here</a>, and is used in the first part of this work to build the model and perform cross validation. It is called <strong>pml_training.csv</strong> from here on. After Having evaluated the accuracy of the different prediction models in the first part, I will make an explicit prediction for the seccond dataset downloaded from <a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv">here</a>. It contains 20 observations and I will refer to the data with the term <strong>pml_testing.csv</strong>.</p>
+<p>In this work I build and test different prediction models which all are meant to estimate the correctness of barbell lifts, based on a set of variables. The data used for this project were compiled by <a href="http://groupware.les.inf.puc-rio.br/har">Groupware.LES</a> and cover two different datasets. The first one consist of over 19000 observations, can be downloaded from <a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv">here</a>, and is used in the first part of this work to build the model and perform cross validation. It is called <strong>pml_training.csv</strong> from here on. After Having evaluated the accuracy of the different prediction models in the first part, I will make an explicit prediction for the second data set downloaded from <a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv">here</a>. It contains 20 observations and I will refer to the data with the term <strong>pml_testing.csv</strong>.</p>
 </div>
 <div id="methodology" class="section level3">
 <h3>Methodology</h3>
-<p><strong>Datasets and Cross Validation</strong> For the model generation and the conduction of cross validation and out-of-sample error estimation, the <strong>pml_training.csv</strong> set is divided into three subsets: <strong>train_set, test_set and validation_set</strong>. These shall <strong>not</strong> be confused with the <strong>pml_training.csv</strong> or the <strong>pml_testing.csv</strong>, since those are just subsets of the <strong>pml_training.csv</strong>. The <strong>train_set</strong> is used to compute the individual models and the <strong>test_set</strong> and <strong>validation_set</strong> to predict their accuracy and out-of-sample error. In Addition the <strong>test_set</strong> is also used to build a model which combines the results of all the individual models. Cross validation with this combined model can only be performed with the <strong>validation_set</strong>, since cross validation cannot be done using a dataset with which the original model was actually built.</p>
-<p><strong>Individual Models</strong> Six individual prediction models are tested, which are the most powerfull I know: 1. Gradient Bosting Machines (gbm) 2. Random Forest (rf) 3. Randomized Random Forest (rrf) 4. Naive Bayes (nb) 5. Support Vector Machines (svm) 6. Neural Networks (nnet)</p>
+<p><strong>Datasets and Cross Validation</strong> For the model generation and the conduction of cross validation and out-of-sample error estimation, the <strong>pml_training.csv</strong> set is divided into three subsets: <strong>train_set, test_set and validation_set</strong>. These shall <strong>not</strong> be confused with the <strong>pml_training.csv</strong> or the <strong>pml_testing.csv</strong>, since those are just subsets of the <strong>pml_training.csv</strong>. The <strong>train_set</strong> is used to compute the individual models and the <strong>test_set</strong> and <strong>validation_set</strong> to predict their accuracy and out-of-sample error. In Addition the <strong>test_set</strong> is also used to build a model which combines the results of all the individual models. Cross validation with this combined model can only be performed with the <strong>validation_set</strong>, since cross validation cannot be done using a data set with which the original model was actually built.</p>
+<p><strong>Individual Models</strong><br />Six individual prediction models are tested, which are the most powerful I know:</p>
+<ol style="list-style-type: decimal">
+<li>Gradient Boosting Machines (gbm)</li>
+<li>Random Forest (rf)</li>
+<li>Randomized Random Forest (rrf)</li>
+<li>Naive Bayes (nb)</li>
+<li>Support Vector Machines (svm)</li>
+<li>Neural Networks (nnet)</li>
+</ol>
 <p><strong>Principal Component Analysis</strong> The <strong>pml_training.csv</strong> and the <strong>pml_testing.csv</strong> consist of more than 150 variables. Even when the sets are cleaned for those variables with a lot NA and other not usable entries, there are more than 50 variables left. In order to reduce this number a Principal Component Analysis is applied to compress the numeric variables to <strong>20 Principal Components</strong>.</p>
 </div>
 <div id="loading-data-and-packages" class="section level3">
@@ -145,7 +153,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 </div>
 <div id="individual-model-generation-and-individual-model-prediction" class="section level3">
 <h3>Individual Model Generation and Individual Model Prediction</h3>
-<p>In the following the six model considered - gradient boosed machines, random forest, randomized random forest, naive bayes, support vector machines and neural networks - are generated using the training set and the corresponding predictions for training, testing and validation set are made.</p>
+<p>In the following the six model considered - gradient boosted machines, random forest, randomized random forest, naive bayes, support vector machines and neural networks - are generated using the training set and the corresponding predictions for training, testing and validation set are made.</p>
 <p><strong>Gradient Bosting Machines (gbm)</strong></p>
 <pre class="r"><code>    ## gbm model generation 
       modelFit_gbm &lt;- gbm(classe~., data=train_var, 
@@ -228,7 +236,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 </div>
 <div id="generating-the-combined-predictions" class="section level3">
 <h3>Generating the Combined Predictions</h3>
-<p>In the following the gbm-, rf-, nb-,svm- and nnet-prediction models are used to generate the combined model (comb) which is combuted using the best performing algorithm (this is random forest (rf), see the results later).</p>
+<p>In the following the gbm-, rf-, nb-,svm- and nnet-prediction models are used to generate the combined model (comb) which is computed using the best performing algorithm (this is random forest (rf), see the results later).</p>
 <p><strong>Generating Model and Prediction Test-Set Values</strong></p>
 <pre class="r"><code>    ## summarizing individual model's predictions in one data frame
       predDF_test &lt;- data.frame(&quot;rf&quot;=predict(modelFit_rf,test_var),&quot;nb&quot;=predict(modelFit_nb,test_var),
@@ -258,12 +266,12 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 </div>
 <div id="cross-validation-out-of-sample-error" class="section level3">
 <h3>Cross Validation / Out-of-Sample Error</h3>
-<p><strong>Accuracy of Training, Testing and Validation set Predictions</strong> Cross validation is performed when a model built with a dataset A is tested on an of A independent dataset B. Therefore the testing set accuracy represents results of <strong>cross validation</strong> for the individual models only <strong>(not their combination)</strong>. The validation set accuracy represents results of <strong>cross validation</strong> for the individual <strong>and</strong> the combined model. Likewise is the expected <strong>out-of-sample error</strong> one minus the accuracy generated by the <strong>cross validation</strong>.</p>
+<p><strong>Accuracy of Training, Testing and Validation set Predictions</strong> Cross validation is performed when a model built with a data set A is tested on an of A independent data set B. Therefore the testing set accuracy represents results of <strong>cross validation</strong> for the individual models only <strong>(not their combination)</strong>. The validation set accuracy represents results of <strong>cross validation</strong> for the individual <strong>and</strong> the combined model. Likewise is the expected <strong>out-of-sample error</strong> one minus the accuracy generated by the <strong>cross validation</strong>.</p>
 <pre class="r"><code>      html_attributes &lt;- list('border=&quot;1&quot; align=&quot;center&quot;')
       print(xtable(train_table,caption=&quot;Accuracy Training Data from training.csv&quot;,digits=c(6,3,3,3,3,3)),
             type=&quot;html&quot;,html.table.attributes=html_attributes)</code></pre>
 <!-- html table generated in R 3.0.2 by xtable 1.7-4 package -->
-<!-- Sun Dec 07 17:29:15 2014 -->
+<!-- Sun Dec 07 19:51:14 2014 -->
 <table border="1" align="center">
 <caption align="bottom"> 
 Accuracy Training Data from training.csv
@@ -308,61 +316,61 @@ rrf
   <tr> <td align="right"> 
 nb
 </td> <td align="right"> 
-0.505
+0.507
 </td> <td align="right"> 
-0.383
+0.377
 </td> <td align="right"> 
-0.496
+0.498
 </td> <td align="right"> 
-0.514
+0.516
 </td> <td align="right"> 
-0.331
+0.269
 </td> </tr>
   <tr> <td align="right"> 
 svm
 </td> <td align="right"> 
-0.901
+0.904
 </td> <td align="right"> 
-0.874
+0.878
 </td> <td align="right"> 
-0.895
+0.898
 </td> <td align="right"> 
-0.906
+0.909
 </td> <td align="right"> 
-0.299
+0.302
 </td> </tr>
   <tr> <td align="right"> 
 gbm
 </td> <td align="right"> 
-0.862
+0.852
 </td> <td align="right"> 
-0.825
+0.812
 </td> <td align="right"> 
-0.856
+0.845
 </td> <td align="right"> 
-0.868
+0.858
 </td> <td align="right"> 
-0.297
+0.300
 </td> </tr>
   <tr> <td align="right"> 
 nnet
 </td> <td align="right"> 
-0.821
-</td> <td align="right"> 
-0.773
-</td> <td align="right"> 
-0.814
-</td> <td align="right"> 
 0.828
 </td> <td align="right"> 
-0.300
+0.783
+</td> <td align="right"> 
+0.821
+</td> <td align="right"> 
+0.835
+</td> <td align="right"> 
+0.292
 </td> </tr>
    </table>
 
 <pre class="r"><code>      print(xtable(test_table,caption=&quot;Accuracy Testing Data from training.csv&quot;,digits=c(6,3,3,3,3,3)),
             type=&quot;html&quot;,html.table.attributes=html_attributes)</code></pre>
 <!-- html table generated in R 3.0.2 by xtable 1.7-4 package -->
-<!-- Sun Dec 07 17:29:15 2014 -->
+<!-- Sun Dec 07 19:51:14 2014 -->
 <table border="1" align="center">
 <caption align="bottom"> 
 Accuracy Testing Data from training.csv
@@ -381,91 +389,91 @@ AccuracyNull
   <tr> <td align="right"> 
 rf
 </td> <td align="right"> 
-0.970
+0.969
 </td> <td align="right"> 
-0.962
+0.961
 </td> <td align="right"> 
 0.964
 </td> <td align="right"> 
 0.975
 </td> <td align="right"> 
-0.285
+0.283
 </td> </tr>
   <tr> <td align="right"> 
 rrf
 </td> <td align="right"> 
-0.958
+0.959
 </td> <td align="right"> 
-0.947
+0.948
 </td> <td align="right"> 
-0.951
+0.952
 </td> <td align="right"> 
-0.964
+0.965
 </td> <td align="right"> 
-0.284
+0.283
 </td> </tr>
   <tr> <td align="right"> 
 nb
 </td> <td align="right"> 
-0.488
+0.498
 </td> <td align="right"> 
-0.362
+0.366
 </td> <td align="right"> 
-0.472
+0.483
 </td> <td align="right"> 
-0.504
+0.514
 </td> <td align="right"> 
-0.341
+0.282
 </td> </tr>
   <tr> <td align="right"> 
 svm
 </td> <td align="right"> 
-0.881
+0.892
 </td> <td align="right"> 
-0.850
+0.863
 </td> <td align="right"> 
-0.871
+0.882
 </td> <td align="right"> 
-0.891
+0.901
 </td> <td align="right"> 
-0.295
+0.302
 </td> </tr>
   <tr> <td align="right"> 
 gbm
 </td> <td align="right"> 
-0.814
+0.808
 </td> <td align="right"> 
-0.765
+0.757
 </td> <td align="right"> 
-0.802
+0.795
 </td> <td align="right"> 
-0.826
+0.820
 </td> <td align="right"> 
-0.291
+0.304
 </td> </tr>
   <tr> <td align="right"> 
 nnet
 </td> <td align="right"> 
-0.794
+0.803
 </td> <td align="right"> 
-0.739
+0.751
 </td> <td align="right"> 
-0.781
+0.790
 </td> <td align="right"> 
-0.807
+0.816
 </td> <td align="right"> 
-0.288
+0.295
 </td> </tr>
   <tr> <td align="right"> 
 comb
 </td> <td align="right"> 
-0.973
+0.976
 </td> <td align="right"> 
-0.966
+0.969
 </td> <td align="right"> 
-0.967
+0.970
 </td> <td align="right"> 
-0.978
+0.980
 </td> <td align="right"> 
 0.284
 </td> </tr>
@@ -474,7 +482,7 @@ comb
 <pre class="r"><code>      print(xtable(val_table,caption=&quot;Accuracy Validation Data from training.csv&quot;,digits=c(6,3,3,3,3,3)),
             type=&quot;html&quot;,html.table.attributes=html_attributes)</code></pre>
 <!-- html table generated in R 3.0.2 by xtable 1.7-4 package -->
-<!-- Sun Dec 07 17:29:15 2014 -->
+<!-- Sun Dec 07 19:51:14 2014 -->
 <table border="1" align="center">
 <caption align="bottom"> 
 Accuracy Validation Data from training.csv
@@ -493,93 +501,93 @@ AccuracyNull
   <tr> <td align="right"> 
 rf
 </td> <td align="right"> 
-0.971
-</td> <td align="right"> 
-0.964
+0.972
 </td> <td align="right"> 
 0.965
 </td> <td align="right"> 
-0.976
+0.967
 </td> <td align="right"> 
-0.285
+0.977
+</td> <td align="right"> 
+0.282
 </td> </tr>
   <tr> <td align="right"> 
 rrf
 </td> <td align="right"> 
-0.960
+0.957
 </td> <td align="right"> 
-0.949
+0.946
 </td> <td align="right"> 
-0.953
+0.950
 </td> <td align="right"> 
-0.966
+0.963
 </td> <td align="right"> 
-0.284
+0.281
 </td> </tr>
   <tr> <td align="right"> 
 nb
 </td> <td align="right"> 
-0.511
+0.499
 </td> <td align="right"> 
-0.391
+0.366
 </td> <td align="right"> 
-0.495
+0.483
 </td> <td align="right"> 
-0.526
+0.514
 </td> <td align="right"> 
-0.328
+0.276
 </td> </tr>
   <tr> <td align="right"> 
 svm
 </td> <td align="right"> 
-0.896
+0.882
 </td> <td align="right"> 
-0.869
+0.851
 </td> <td align="right"> 
-0.886
+0.872
 </td> <td align="right"> 
-0.906
+0.892
 </td> <td align="right"> 
-0.295
+0.298
 </td> </tr>
   <tr> <td align="right"> 
 gbm
 </td> <td align="right"> 
-0.834
+0.797
 </td> <td align="right"> 
-0.790
+0.743
 </td> <td align="right"> 
-0.822
+0.784
 </td> <td align="right"> 
-0.846
+0.810
 </td> <td align="right"> 
-0.293
+0.300
 </td> </tr>
   <tr> <td align="right"> 
 nnet
 </td> <td align="right"> 
+0.797
+</td> <td align="right"> 
+0.743
+</td> <td align="right"> 
+0.784
+</td> <td align="right"> 
 0.809
 </td> <td align="right"> 
-0.758
-</td> <td align="right"> 
-0.796
-</td> <td align="right"> 
-0.821
-</td> <td align="right"> 
-0.292
+0.285
 </td> </tr>
   <tr> <td align="right"> 
 comb
 </td> <td align="right"> 
-0.970
-</td> <td align="right"> 
-0.962
+0.972
 </td> <td align="right"> 
 0.964
 </td> <td align="right"> 
-0.975
+0.966
 </td> <td align="right"> 
-0.285
+0.977
+</td> <td align="right"> 
+0.283
 </td> </tr>
    </table>
 <p>The random forest models and the combined model report the <strong>lowest out-of-sample error</strong> and therefore seem to be the best performing prediction models.</p>
@@ -649,7 +657,7 @@ comb
       print(xtable(t(test_data_table),caption=&quot;Predictions for pml_testing.csv&quot;),
             type=&quot;html&quot;,html.table.attributes=html_attributes)</code></pre>
 <!-- html table generated in R 3.0.2 by xtable 1.7-4 package -->
-<!-- Sun Dec 07 17:29:17 2014 -->
+<!-- Sun Dec 07 19:51:16 2014 -->
 <table border="1" align="center">
 <caption align="bottom"> 
 Predictions for pml_testing.csv
@@ -708,7 +716,7 @@ A
 </td> <td> 
 A
 </td> <td> 
-E
+B
 </td> <td> 
 D
 </td> <td> 
@@ -751,7 +759,7 @@ A
 </td> <td> 
 A
 </td> <td> 
-E
+B
 </td> <td> 
 D
 </td> <td> 
@@ -761,7 +769,7 @@ A
 </td> <td> 
 A
 </td> <td> 
-A
+B
 </td> <td> 
 C
 </td> <td> 
@@ -784,17 +792,17 @@ B
   <tr> <td align="right"> 
 nb
 </td> <td> 
-C
+B
 </td> <td> 
 A
 </td> <td> 
-C
-</td> <td> 
-C
-</td> <td> 
-C
+A
 </td> <td> 
 A
+</td> <td> 
+A
+</td> <td> 
+E
 </td> <td> 
 D
 </td> <td> 
@@ -804,11 +812,11 @@ A
 </td> <td> 
 A
 </td> <td> 
-B
-</td> <td> 
-C
+A
 </td> <td> 
 A
+</td> <td> 
+B
 </td> <td> 
 A
 </td> <td> 
@@ -818,9 +826,9 @@ B
 </td> <td> 
 A
 </td> <td> 
-B
+E
 </td> <td> 
-A
+B
 </td> <td> 
 B
 </td> </tr>
@@ -837,7 +845,7 @@ A
 </td> <td> 
 A
 </td> <td> 
-E
+B
 </td> <td> 
 D
 </td> <td> 
@@ -847,7 +855,7 @@ A
 </td> <td> 
 A
 </td> <td> 
-B
+A
 </td> <td> 
 C
 </td> <td> 
@@ -870,7 +878,7 @@ B
   <tr> <td align="right"> 
 gbm
 </td> <td> 
-A
+B
 </td> <td> 
 A
 </td> <td> 
@@ -880,7 +888,7 @@ A
 </td> <td> 
 A
 </td> <td> 
-E
+B
 </td> <td> 
 D
 </td> <td> 
@@ -906,7 +914,7 @@ A
 </td> <td> 
 B
 </td> <td> 
-A
+B
 </td> <td> 
 B
 </td> </tr>
@@ -923,11 +931,11 @@ A
 </td> <td> 
 A
 </td> <td> 
-D
+E
 </td> <td> 
 D
 </td> <td> 
-A
+B
 </td> <td> 
 A
 </td> <td> 
@@ -966,7 +974,7 @@ A
 </td> <td> 
 A
 </td> <td> 
-E
+B
 </td> <td> 
 D
 </td> <td> 
